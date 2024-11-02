@@ -1,0 +1,23 @@
+body {
+    background-color: #f8f9fa;
+}
+
+h1, h2 {
+    color: #343a40;
+}
+
+label {
+    font-weight: bold;
+}
+
+#vehicle_models {
+    width: 100% !important;
+}
+
+.mb-5 {
+    margin-bottom: 3rem !important;
+}
+
+.graph-container {
+    margin-bottom: 2rem;
+}
