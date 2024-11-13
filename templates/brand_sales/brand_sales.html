@@ -1,0 +1,135 @@
+<!-- templates/brand_sales/brand_sales.html -->
+{% extends 'base.html' %}
+
+{% block title %}Sales by Car Brand{% endblock %}
+
+{% block content %}
+<h1 class="mb-4 text-center">Sales by Car Brand</h1>
+
+<!-- Filters -->
+<form method="post" id="filter-form">
+    <div class="form-row mb-4">
+        <div class="form-group col-md-4">
+            <label for="vehicle_type">Vehicle Type:</label>
+            <select class="form-control" id="vehicle_type" name="vehicle_type">
+                {% for type in vehicle_types %}
+                <option value="{{ type }}" {% if selected_vehicle_type == type %}selected{% endif %}>{{ type }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group col-md-4">
+            <label for="province">Province/Territory:</label>
+            <select class="form-control" id="province" name="province">
+                {% for province in provinces %}
+                <option value="{{ province }}" {% if selected_province == province %}selected{% endif %}>{{ province }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group col-md-4 align-self-end">
+            <button type="submit" class="btn btn-primary btn-block">Apply Filters</button>
+        </div>
+    </div>
+</form>
+
+<!-- Sales Table -->
+<table class="table table-bordered table-hover">
+    <thead class="thead-dark">
+        <tr>
+            <th id="brand-header" class="sortable">Brand</th>
+            {% for month in months %}
+            <th class="sortable">{{ month }}</th>
+            {% endfor %}
+            <th class="sortable" title="Includes {{ past_6_months_range }}">Past 6 Months Total</th>
+            <th class="sortable" title="Includes {{ ytd_range }}">YTD Total</th>
+            <th class="sortable" title="Includes {{ past_year_range }}">Past Year Total</th>
+        </tr>
+    </thead>
+    <tbody id="sales-table-body">
+        {% for brand in brand_data %}
+        <tr class="brand-row" data-brand="{{ brand['Vehicle Make'] }}">
+            <td><span class="expand-icon">+</span> {{ brand['Vehicle Make'] }}</td>
+            {% for month in month_periods %}
+            <td>{{ brand[month]|int }}</td>
+            {% endfor %}
+            <td>{{ brand['Past 6 Months Total']|int }}</td>
+            <td>{{ brand['YTD Total']|int }}</td>
+            <td>{{ brand['Past Year Total']|int }}</td>
+        </tr>
+        {% if brand['Vehicle Make'] in model_data %}
+            {% for model in model_data[brand['Vehicle Make']] %}
+            <tr class="model-row" data-parent="{{ brand['Vehicle Make'] }}">
+                <td>&nbsp;&nbsp;&nbsp;{{ model['Vehicle Model'] }}</td>
+                {% for month in month_periods %}
+                <td>{{ model[month]|int }}</td>
+                {% endfor %}
+                <td>{{ model['Past 6 Months Total']|int }}</td>
+                <td>{{ model['YTD Total']|int }}</td>
+                <td>{{ model['Past Year Total']|int }}</td>
+            </tr>
+            {% endfor %}
+        {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function(){
+    // Hide model rows initially
+    $('.model-row').hide();
+
+    // Expand/Collapse functionality
+    $('.expand-icon').click(function(){
+        var brand = $(this).closest('.brand-row').data('brand');
+        $(this).text($(this).text() == '+' ? '-' : '+');
+        $('.model-row[data-parent="' + brand + '"]').toggle();
+    });
+
+    // Sorting functionality
+    var sortOrder = {};
+    var currentColumn = -1;
+
+    $('.sortable').click(function(){
+        var index = $(this).index();
+        var table = $(this).parents('table');
+        var rows = table.find('tbody > tr.brand-row').get();
+
+        // Determine sort order
+        if (currentColumn === index) {
+            sortOrder[index] = (sortOrder[index] === 'asc') ? 'desc' : 'asc';
+        } else {
+            sortOrder[index] = 'asc';
+            currentColumn = index;
+        }
+
+        rows.sort(function(a, b){
+            var keyA = $(a).children('td').eq(index).text().trim();
+            var keyB = $(b).children('td').eq(index).text().trim();
+
+            if ($.isNumeric(keyA) && $.isNumeric(keyB)) {
+                keyA = parseInt(keyA);
+                keyB = parseInt(keyB);
+            } else {
+                keyA = keyA.toLowerCase();
+                keyB = keyB.toLowerCase();
+            }
+
+            if (sortOrder[index] === 'asc') {
+                return (keyA > keyB) ? 1 : (keyA < keyB) ? -1 : 0;
+            } else {
+                return (keyA < keyB) ? 1 : (keyA > keyB) ? -1 : 0;
+            }
+        });
+
+        // Append sorted rows and their model rows
+        $.each(rows, function(index, row){
+            $('#sales-table-body').append(row);
+            var brand = $(row).data('brand');
+            var models = $('tr.model-row[data-parent="' + brand + '"]');
+            $('#sales-table-body').append(models);
+        });
+    });
+});
+</script>
+{% endblock %}

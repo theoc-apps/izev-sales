@@ -45,3 +45,39 @@ label {
 .sortable:hover {
     text-decoration: underline;
 }
+
+.expand-icon {
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* Customize table appearance */
+table {
+    width: 100%;
+    margin-bottom: 1rem;
+    color: #212529;
+}
+
+table th, table td {
+    vertical-align: middle;
+    text-align: center;
+}
+
+/* Highlight the Canada row */
+.total-row {
+    background-color: #d1ecf1; /* Light blue background */
+    font-weight: bold;
+}
+
+/* Optional: Improve table responsiveness */
+@media (max-width: 768px) {
+    table {
+        font-size: 0.9rem;
+    }
+}
+
+/* Optional: Style the navigation bar */
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}

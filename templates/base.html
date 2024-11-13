@@ -8,7 +8,7 @@
     <!-- Include Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <!-- Custom CSS -->
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">
     {% block head %}{% endblock %}
 
     <!-- Google tag (gtag.js) -->
@@ -35,7 +35,7 @@
                     <a class="nav-link" href="{{ url_for('index') }}">Home</a>
                 </li>
                 <li class="nav-item {% if request.endpoint == 'brand_sales' %}active{% endif %}">
-                    <a class="nav-link" href="{{ url_for('brand_sales') }}">Sales by Brand</a>
+                    <a class="nav-link" href="{{ url_for('brand_sales_bp.brand_sales') }}">Sales by Brand</a>
                 </li>
                 <!-- Add more navigation items here if needed -->
             </ul>
