@@ -21,3 +21,27 @@ label {
 .graph-container {
     margin-bottom: 2rem;
 }
+
+.model-row td:first-child {
+    padding-left: 30px;
+    font-style: italic;
+    color: #555;
+}
+
+/* Optional: Change cursor to pointer for brand rows to indicate interactivity */
+.brand-row {
+    cursor: pointer;
+}
+
+/* Optional: Add hover effect for brand rows */
+.brand-row:hover {
+    background-color: #f1f1f1;
+}
+
+.sortable {
+    cursor: pointer;
+}
+
+.sortable:hover {
+    text-decoration: underline;
+}

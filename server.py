@@ -1,6 +1,8 @@
 import pandas as pd
 from flask import Flask, render_template, request, jsonify
 import plotly.express as px
+from datetime import datetime
+from pandas.tseries.offsets import MonthEnd
 
 app = Flask(__name__)
 
@@ -122,6 +124,60 @@ def update_graphs():
         'graph3': graph3,
         'graph4': graph4
     })
+
+# server.py
+
+@app.route('/brand_sales', methods=['GET', 'POST'])
+def brand_sales():
+    # Determine the last available month in the data
+    last_available_month = df['Month and Year'].max()
+    
+    if request.method == 'POST':
+        # Retrieve selected dates from the form
+        start_date_str = request.form.get('start_date')
+        end_date_str = request.form.get('end_date')
+        
+        try:
+            # Convert to datetime objects; assume 'YYYY-MM' format
+            start_date = pd.to_datetime(start_date_str)
+            end_date = pd.to_datetime(end_date_str) + MonthEnd(0)  # Set to end of the month
+        except Exception as e:
+            # Handle parsing errors
+            print(f"Date parsing error: {e}")
+            # Fallback to default YTD
+            start_date = pd.to_datetime(f"{last_available_month.year}-01")
+            end_date = last_available_month
+    else:
+        # Set default to YTD
+        start_date = pd.to_datetime(f"{last_available_month.year}-01")
+        end_date = last_available_month
+    
+    # Filter data based on date range
+    df_filtered = df[(df['Month and Year'] >= start_date) & (df['Month and Year'] <= end_date)]
+    
+    # Total sales per brand
+    df_brand_sales = df_filtered.groupby('Vehicle Make')['Number of Cars'].sum().reset_index()
+    
+    # Sales per model per brand
+    df_model_sales = df_filtered.groupby(['Vehicle Make', 'Vehicle Model'])['Number of Cars'].sum().reset_index()
+    
+    # Prepare data for rendering
+    brand_sales_data = df_brand_sales.to_dict('records')
+    model_sales_data = {}
+    for brand in df_brand_sales['Vehicle Make']:
+        models = df_model_sales[df_model_sales['Vehicle Make'] == brand][['Vehicle Model', 'Number of Cars']]
+        model_sales_data[brand] = models.to_dict('records')
+    
+    # Format dates as 'YYYY-MM' for 'month' input fields
+    start_date_formatted = start_date.strftime('%Y-%m')
+    end_date_formatted = end_date.strftime('%Y-%m')
+    
+    return render_template('brand_sales.html',
+                           brand_sales=brand_sales_data,
+                           model_sales=model_sales_data,
+                           start_date=start_date_formatted,
+                           end_date=end_date_formatted,
+                           last_available_month=last_available_month.strftime('%Y-%m'))
 
 if __name__ == '__main__':
     app.run(debug=True)
