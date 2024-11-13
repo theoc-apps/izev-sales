@@ -5,6 +5,49 @@
 
 {% block content %}
     <h1 class="mb-4 text-center">Sales by Car Brand</h1>
+    <!-- New table added here -->
+<table class="table table-bordered table-hover">
+    <thead class="thead-dark">
+        <tr>
+            <th rowspan="2">Brand</th>
+            <th colspan="{{ months|length }}">Past 6 Months Sales</th>
+            <th rowspan="2">Past 6 Months Total</th>
+            <th rowspan="2">YTD Total</th>
+            <th rowspan="2">Past Year Total</th>
+        </tr>
+        <tr>
+            {% for month in months %}
+            <th>{{ month }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for brand in brand_data %}
+        <tr class="brand-row" data-brand="{{ brand['Vehicle Make'] }}">
+            <td><span class="expand-icon">+</span> {{ brand['Vehicle Make'] }}</td>
+            {% for month in month_periods %}
+            <td>{{ brand[month]|int }}</td>
+            {% endfor %}
+            <td>{{ brand['Past 6 Months Total']|int }}</td>
+            <td>{{ brand['YTD Total']|int }}</td>
+            <td>{{ brand['Past Year Total']|int }}</td>
+        </tr>
+        {% if model_data[brand['Vehicle Make']] %}
+            {% for model in model_data[brand['Vehicle Make']] %}
+            <tr class="model-row" data-parent="{{ brand['Vehicle Make'] }}">
+                <td>&nbsp;&nbsp;&nbsp;{{ model['Vehicle Model'] }}</td>
+                {% for month in month_periods %}
+                <td>{{ model[month]|int }}</td>
+                {% endfor %}
+                <td>{{ model['Past 6 Months Total']|int }}</td>
+                <td>{{ model['YTD Total']|int }}</td>
+                <td>{{ model['Past Year Total']|int }}</td>
+            </tr>
+            {% endfor %}
+        {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
     <form method="post" class="mb-4" id="date-form">
         <div class="form-row">
             <div class="form-group col-md-5">
