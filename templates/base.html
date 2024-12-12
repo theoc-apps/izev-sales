@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{% block title %}iZEV Sales Dashboard{% endblock %}</title>
+    <title>{% block title %}iZEV Sales{% endblock %}</title>
     <!-- Include Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <!-- Include Select2 CSS -->
@@ -20,11 +20,18 @@
     
       gtag('config', 'G-QWHJG117LH');
     </script>
+    {% block head %}{% endblock %}
+    <style>
+        /* Add margin under the navigation bar */
+        .container {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation Menu -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="{{ url_for('index') }}">iZEV Sales Dashboard</a>
+        <a class="navbar-brand" href="{{ url_for('index') }}">iZEV Sales</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" 
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>

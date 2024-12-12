@@ -53,6 +53,34 @@ def index():
     # Convert the Plotly figure to HTML
     graph_html = fig.to_html(full_html=False)
 
+    # Best Selling Cars Bar Chart
+    last_available_month = df['Month and Year'].max()
+    latest_month_data = df[df['Month and Year'] == last_available_month]
+    best_selling_cars = (
+        latest_month_data.groupby(['Vehicle Make', 'Vehicle Model'])['Number of Cars']
+        .sum()
+        .nlargest(10)
+        .reset_index()
+    )
+    # Combine Vehicle Make and Model for display
+    best_selling_cars['Make and Model'] = best_selling_cars['Vehicle Make'] + ' ' + best_selling_cars['Vehicle Model']
+    # Extract the actual month name
+    latest_month_str = last_available_month.strftime('%B %Y')
+    bar_fig = px.bar(
+        best_selling_cars,
+        x='Make and Model',
+        y='Number of Cars',
+        title=f'Best Selling Cars in {latest_month_str}',
+        labels={'Number of Cars': 'Sales'},
+        template='plotly_white'
+    )
+    bar_fig.update_layout(
+        xaxis_title='Car Model',
+        yaxis_title='Number of Cars',
+        title_x=0.5
+    )
+    bar_graph_html = bar_fig.to_html(full_html=False)
+
     # -------------------------- Table Data Calculation -------------------------- #
     # Identify the latest month in the dataset
     latest_month = df['Month and Year'].max()
@@ -141,6 +169,7 @@ def index():
     return render_template(
         'index.html',
         graph=graph_html,
+        best_selling_cars_graph=bar_graph_html,
         table_data=table_data,
         last_6_months_labels=last_6_months_labels,
         total_last_6_months_range=total_last_6_months_range,
@@ -180,6 +209,38 @@ def update_graph():
 
     # Convert the Plotly figure to HTML
     graph_html = fig.to_html(full_html=False)
+
+    # Best Selling Cars Bar Chart
+    latest_month = filtered_df['Month and Year'].max()
+    latest_month_data = filtered_df[filtered_df['Month and Year'] == latest_month]
+    best_selling_cars = (
+        latest_month_data.groupby(['Vehicle Make', 'Vehicle Model'])['Number of Cars']
+        .sum()
+        .nlargest(10)
+        .reset_index()
+    )
+
+    if best_selling_cars.empty:
+        bar_graph_html = '<p>No best selling cars data available for the latest month.</p>'
+    else:
+        # Combine Vehicle Make and Model for display
+        best_selling_cars['Make and Model'] = best_selling_cars['Vehicle Make'] + ' ' + best_selling_cars['Vehicle Model']
+        # Extract the actual month name
+        latest_month_str = latest_month.strftime('%B %Y')
+        bar_fig = px.bar(
+            best_selling_cars,
+            x='Make and Model',
+            y='Number of Cars',
+            title=f'Best Selling Cars in {latest_month_str}',
+            labels={'Number of Cars': 'Sales'},
+            template='plotly_white'
+        )
+        bar_fig.update_layout(
+            xaxis_title='Car Model',
+            yaxis_title='Number of Cars',
+            title_x=0.5
+        )
+        bar_graph_html = bar_fig.to_html(full_html=False)
 
     # Update table data
     latest_month = filtered_df['Month and Year'].max()
@@ -235,6 +296,7 @@ def update_graph():
 
     return jsonify({
         'graph_html': graph_html,
+        'best_selling_cars_graph': bar_graph_html,
         'table_data': table_data,
         'last_6_months_labels': last_6_months_labels,
         'total_last_6_months_range': f"{last_6_months.iloc[-1].strftime('%b %Y')} - {last_6_months.iloc[0].strftime('%b %Y')}",

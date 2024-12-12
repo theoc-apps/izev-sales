@@ -1,7 +1,7 @@
 <!-- templates/index.html -->
 {% extends "base.html" %}
 
-{% block title %}iZEV Sales Dashboard{% endblock %}
+{% block title %}iZEV Sales{% endblock %}
 
 {% block head %}
     <!-- Include DataTables CSS -->
@@ -21,7 +21,6 @@
 {% endblock %}
 
 {% block content %}
-    <h1 class="my-4 text-center">iZEV Sales Over Time</h1>
 
     <!-- Vehicle Type Selection -->
     <div class="form-group">
@@ -35,6 +34,11 @@
 
     <div id="graph" class="mb-5">
         {{ graph | safe }}
+    </div>
+
+    <!-- Add the Best Selling Cars Bar Chart -->
+    <div id="best-selling-cars-graph" class="mb-5">
+        {{ best_selling_cars_graph | safe }}
     </div>
 
     <h2 class="my-4">Sales Summary</h2>
@@ -109,6 +113,7 @@
                     success: function(response) {
                         // Update the graph
                         $('#graph').html(response.graph_html);
+                        $('#best-selling-cars-graph').html(response.best_selling_cars_graph);
     
                         // Update the table
                         table.clear(); // Clear existing table data
