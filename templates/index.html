@@ -43,6 +43,10 @@
         {{ best_selling_cars_graph | safe }}
     </div>
 
+    <!-- Sales by Province/Territory Graph -->
+    <div id="province-sales-graph" class="mb-5">
+    </div>
+
     <h2 class="my-4">Sales Summary</h2>
 
     <div class="table-responsive">
@@ -87,6 +91,9 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Include DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
+    <!-- Include Date Range Picker JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/daterangepicker/3.1/daterangepicker.min.js"></script>
     <script>
         $(document).ready(function() {
             // Initialize DataTable and assign to 'table' variable
@@ -149,6 +156,34 @@
                         alert('Error updating the graph and table.');
                     }
                 });
+            });
+
+            function updateProvinceGraph() {
+                var selectedType = $('#vehicle_type_select').val();
+                $.ajax({
+                    url: '/get_province_sales_data',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        vehicle_type: selectedType
+                    }),
+                    success: function(response) {
+                        $('#province-sales-graph').html(response.province_graph_html);
+                    },
+                    error: function() {
+                        alert('Error updating the province sales graph.');
+                    }
+                });
+            }
+
+            // Initial load of the province graph
+            updateProvinceGraph();
+
+            // Update all graphs when vehicle type changes
+            $('#vehicle_type_select').change(function() {
+                var selectedType = $(this).val();
+                // ...existing AJAX call for updating main graphs...
+                updateProvinceGraph();
             });
         });
     </script>

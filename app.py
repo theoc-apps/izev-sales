@@ -7,6 +7,7 @@ import plotly.express as px
 import plotly
 import json
 import pandas as pd
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -15,6 +16,7 @@ df = load_data()
 
 # Combine Vehicle Make and Model
 df['Make and Model'] = df['Vehicle Make'] + ' ' + df['Vehicle Model']
+df['Month and Year'] = pd.to_datetime(df['Month and Year'], format='%b %Y')  # Adjust format as needed
 
 # Step 3: Extract unique vehicle types and provinces/territories
 vehicle_types, available_provinces, _ = get_unique_values(df)
@@ -304,6 +306,85 @@ def update_graph():
         'total_last_6_months_range': f"{last_6_months.iloc[-1].strftime('%b %Y')} - {last_6_months.iloc[0].strftime('%b %Y')}",
         'ytd_range': f"{ytd_start.strftime('%b %Y')} - {latest_month.strftime('%b %Y')}",
         'one_year_range': f"{(latest_month - pd.DateOffset(years=1)).strftime('%b %Y')} - {latest_month.strftime('%b %Y')}"
+    })
+
+@app.route('/get_province_sales_data', methods=['POST'])
+def get_province_sales_data():
+    data = request.get_json()
+    selected_vehicle_type = data.get('vehicle_type', 'All')
+
+    # Set date range to include all data
+    end_date = df['Month and Year'].max()
+    start_date = end_date - pd.DateOffset(years=10)  # Adjust as needed for historical data span
+
+    # Filter data based on vehicle type only
+    filtered_df = df.copy()
+    if selected_vehicle_type != 'All':
+        filtered_df = filtered_df[filtered_df['Vehicle Type'] == selected_vehicle_type]
+    
+    # Group data by 'Month and Year' and 'Province/Territory'
+    province_time_sales = filtered_df.groupby(['Month and Year', 'Province/Territory'])['Number of Cars'].sum().reset_index()
+
+    # Pivot the data to have 'Month and Year' as x-axis and provinces as lines
+    pivot_df = province_time_sales.pivot(index='Month and Year', columns='Province/Territory', values='Number of Cars').fillna(0)
+
+    # Determine the top 4 provinces based on the most recent month's sales
+    latest_month = pivot_df.index.max()
+    top_provinces = pivot_df.loc[latest_month].sort_values(ascending=False).nlargest(4).index.tolist()
+    
+    # **New Code Starts Here**
+    # Sort all provinces based on sales in the latest month
+    sorted_provinces = pivot_df.loc[latest_month].sort_values(ascending=False).index.tolist()
+    
+    # Reorder pivot_df columns based on sorted_provinces
+    pivot_df = pivot_df[sorted_provinces]
+    # **New Code Ends Here**
+
+    # Create the Plotly line chart with all provinces
+    fig = px.line(
+        pivot_df,
+        x=pivot_df.index,
+        y=pivot_df.columns,
+        title='Sales by Province/Territory Over Time',
+        labels={'value': 'Number of Cars', 'Month and Year': 'Date'},
+        template='plotly_white'
+    )
+    fig.update_layout(
+        xaxis_title='Month and Year',
+        yaxis_title='Number of Cars',
+        legend_title_text='Province/Territory',
+        title_x=0.5,
+        xaxis=dict(
+            range=[end_date - pd.DateOffset(years=1), end_date],  # Default to past year
+            rangeselector=dict(
+                buttons=list([
+                    dict(count=1, label="1y", step="year", stepmode="backward"),
+                    dict(count=2, label="2y", step="year", stepmode="backward"),
+                    dict(step="all")
+                ])
+            ),
+            rangeslider=dict(visible=True),
+            type="date"
+        )
+    )
+
+    # Set visibility: top 4 provinces visible, others legendonly
+    for trace in fig.data:
+        if trace.name not in top_provinces:
+            trace.visible = 'legendonly'
+        # **New Code Starts Here**
+        # Update hover template to include Province/Territory name
+        trace.hovertemplate = '%{fullData.name}<br>%{x|%b %Y}<br>Cars Sold: %{y}<extra></extra>'
+        # **New Code Ends Here**
+
+    # Enable panning and zooming
+    fig.update_xaxes(rangeslider_visible=True)
+
+    # Convert the figure to HTML
+    province_graph_html = fig.to_html(full_html=False, config={'displayModeBar': False, 'responsive': True})
+
+    return jsonify({
+        'province_graph_html': province_graph_html
     })
 
 if __name__ == '__main__':
