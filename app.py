@@ -49,9 +49,10 @@ def index():
         yaxis_title='Number of Cars',
         title_x=0.5
     )
+    fig.update_traces(hovertemplate='%{x|%b %Y}<br>Sales: %{y}')
 
     # Convert the Plotly figure to HTML
-    graph_html = fig.to_html(full_html=False)
+    graph_html = fig.to_html(full_html=False, config={'displayModeBar': False, 'responsive': False})
 
     # Best Selling Cars Bar Chart
     last_available_month = df['Month and Year'].max()
@@ -79,7 +80,7 @@ def index():
         yaxis_title='Number of Cars',
         title_x=0.5
     )
-    bar_graph_html = bar_fig.to_html(full_html=False)
+    bar_graph_html = bar_fig.to_html(full_html=False, config={'displayModeBar': False, 'responsive': False})
 
     # -------------------------- Table Data Calculation -------------------------- #
     # Identify the latest month in the dataset
@@ -206,9 +207,10 @@ def update_graph():
         yaxis_title='Number of Cars',
         title_x=0.5
     )
+    fig.update_traces(hovertemplate='%{x|%b %Y}<br>Sales: %{y}')
 
     # Convert the Plotly figure to HTML
-    graph_html = fig.to_html(full_html=False)
+    graph_html = fig.to_html(full_html=False, config={'displayModeBar': False, 'responsive': False})
 
     # Best Selling Cars Bar Chart
     latest_month = filtered_df['Month and Year'].max()
@@ -240,7 +242,7 @@ def update_graph():
             yaxis_title='Number of Cars',
             title_x=0.5
         )
-        bar_graph_html = bar_fig.to_html(full_html=False)
+        bar_graph_html = bar_fig.to_html(full_html=False, config={'displayModeBar': False, 'responsive': False})
 
     # Update table data
     latest_month = filtered_df['Month and Year'].max()

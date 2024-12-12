@@ -20,6 +20,16 @@
     
       gtag('config', 'G-QWHJG117LH');
     </script>
+    <style>
+        /* Add margin under the navigation bar */
+        .container {
+            margin-top: 20px;
+        }
+        /* Make the active navigation item bold */
+        .navbar-nav .nav-item.active .nav-link {
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation Menu -->
@@ -31,10 +41,10 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
-                <li class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+                <li class="nav-item {% if request.path == url_for('index') %}active{% endif %}">
                     <a class="nav-link" href="{{ url_for('index') }}">Home</a>
                 </li>
-                <li class="nav-item {% if request.endpoint == 'brand_sales' %}active{% endif %}">
+                <li class="nav-item {% if request.path == url_for('brand_sales_bp.brand_sales') %}active{% endif %}">
                     <a class="nav-link" href="{{ url_for('brand_sales_bp.brand_sales') }}">Sales by Brand</a>
                 </li>
                 <!-- Add more navigation items here if needed -->
