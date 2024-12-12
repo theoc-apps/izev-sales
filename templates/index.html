@@ -23,6 +23,16 @@
 {% block content %}
     <h1 class="my-4 text-center">iZEV Sales Over Time</h1>
 
+    <!-- Vehicle Type Selection -->
+    <div class="form-group">
+        <label for="vehicle_type_select">Vehicle Type:</label>
+        <select class="form-control" id="vehicle_type_select" name="vehicle_type">
+            {% for type in vehicle_types %}
+            <option value="{{ type }}" {% if selected_vehicle_type == type %}selected{% endif %}>{{ type }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
     <div id="graph" class="mb-5">
         {{ graph | safe }}
     </div>
@@ -70,7 +80,8 @@
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
     <script>
         $(document).ready(function() {
-            $('#sales-table').DataTable({
+            // Initialize DataTable and assign to 'table' variable
+            var table = $('#sales-table').DataTable({
                 "paging": false,             // Disable pagination
                 "searching": false,          // Disable search
                 "info": false,               // Disable info text
@@ -85,6 +96,49 @@
                         "orderable": false    // Disable sorting on Priority column itself
                     }
                 ]
+            });
+    
+            // Handle Vehicle Type selection change
+            $('#vehicle_type_select').change(function() {
+                var selectedType = $(this).val();
+                $.ajax({
+                    url: '/update_graph',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ vehicle_type: selectedType }),
+                    success: function(response) {
+                        // Update the graph
+                        $('#graph').html(response.graph_html);
+    
+                        // Update the table
+                        table.clear(); // Clear existing table data
+    
+                        var table_data = response.table_data;
+                        table_data.forEach(function(row) {
+                            var row_html = '<tr' + (row.Priority === 0 ? ' class="total-row"' : '') + '>';
+                            row_html += '<td>' + row.Priority + '</td>'; // Priority column (hidden)
+                            row_html += '<td>' + row.Province + '</td>'; // Province/Territory column
+    
+                            // Add Last 6 Months sales data
+                            row['Last 6 Months'].forEach(function(sale) {
+                                row_html += '<td>' + sale + '</td>';
+                            });
+    
+                            // Add Total Last 6 Months, YTD, and 1 Year Sales
+                            row_html += '<td>' + row['Total Last 6 Months'] + '</td>';
+                            row_html += '<td>' + row['YTD'] + '</td>';
+                            row_html += '<td>' + row['1 Year'] + '</td>';
+                            row_html += '</tr>';
+    
+                            table.row.add($(row_html)); // Add the new row to the table
+                        });
+    
+                        table.draw(); // Redraw the table to display the new data
+                    },
+                    error: function() {
+                        alert('Error updating the graph and table.');
+                    }
+                });
             });
         });
     </script>

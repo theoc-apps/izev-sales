@@ -145,8 +145,102 @@ def index():
         last_6_months_labels=last_6_months_labels,
         total_last_6_months_range=total_last_6_months_range,
         ytd_range=ytd_range,
-        one_year_range=one_year_range
+        one_year_range=one_year_range,
+        vehicle_types=vehicle_types 
     )
+
+@app.route('/update_graph', methods=['POST'])
+def update_graph():
+    data = request.get_json()
+    selected_vehicle_type = data.get('vehicle_type')
+
+    # Filter data based on selected vehicle type
+    filtered_df = df
+    title = 'Total Sales Over Time'
+    if selected_vehicle_type != 'All':
+        filtered_df = df[df['Vehicle Type'] == selected_vehicle_type]
+        title = f'Total Sales Over Time for {selected_vehicle_type}'
+
+    # Generate updated graph
+    sales_over_time = filtered_df.groupby('Month and Year')['Number of Cars'].sum().reset_index()
+    fig = px.line(
+        sales_over_time,
+        x='Month and Year',
+        y='Number of Cars',
+        title=f'{title}',
+        labels={'Number of Cars': 'Sales'},
+        template='plotly_white'
+    )
+    fig.update_traces(line=dict(width=2))
+    fig.update_layout(
+        xaxis_title='Month and Year',
+        yaxis_title='Number of Cars',
+        title_x=0.5
+    )
+
+    # Convert the Plotly figure to HTML
+    graph_html = fig.to_html(full_html=False)
+
+    # Update table data
+    latest_month = filtered_df['Month and Year'].max()
+    last_6_months = filtered_df['Month and Year'].sort_values().drop_duplicates().iloc[-6:]
+    last_6_months = last_6_months[::-1]
+
+    last_6_months_labels = [month.strftime('%b %Y') for month in last_6_months]
+
+    ytd_start = pd.Timestamp(year=latest_month.year, month=1, day=1)
+    one_year_ago = latest_month - pd.DateOffset(years=1) + pd.DateOffset(days=1)
+
+    total_last_6_months = filtered_df[filtered_df['Month and Year'].isin(last_6_months)]['Number of Cars'].sum()
+    ytd_sales = filtered_df[(filtered_df['Month and Year'] >= ytd_start) & (filtered_df['Month and Year'] <= latest_month)]['Number of Cars'].sum()
+    one_year_sales = filtered_df[(filtered_df['Month and Year'] >= one_year_ago) & (filtered_df['Month and Year'] <= latest_month)]['Number of Cars'].sum()
+
+    canada_sales = filtered_df[filtered_df['Month and Year'].isin(last_6_months)].groupby('Month and Year')['Number of Cars'].sum().reindex(last_6_months).fillna(0)
+    total_canada_last_6 = canada_sales.sum()
+    canada_ytd = filtered_df[(filtered_df['Month and Year'] >= ytd_start) & (filtered_df['Month and Year'] <= latest_month)]['Number of Cars'].sum()
+    canada_one_year = filtered_df[(filtered_df['Month and Year'] >= one_year_ago) & (filtered_df['Month and Year'] <= latest_month)]['Number of Cars'].sum()
+
+    latest_month_sales_per_province = filtered_df[filtered_df['Month and Year'] == latest_month].groupby('Province/Territory')['Number of Cars'].sum()
+    sorted_provinces = latest_month_sales_per_province.sort_values(ascending=False).index.tolist()
+
+    table_data = []
+
+    canada_row = {
+        'Priority': 0,
+        'Province': 'Canada',
+        'Last 6 Months': [int(canada_sales[month]) for month in last_6_months],
+        'Total Last 6 Months': int(total_canada_last_6),
+        'YTD': int(canada_ytd),
+        '1 Year': int(canada_one_year)
+    }
+    table_data.append(canada_row)
+
+    for province in sorted_provinces:
+        province_df = filtered_df[filtered_df['Province/Territory'] == province]
+        province_sales_last_6 = province_df[province_df['Month and Year'].isin(last_6_months)].groupby('Month and Year')['Number of Cars'].sum().reindex(last_6_months).fillna(0)
+        total_province_last_6 = province_sales_last_6.sum()
+        province_ytd = province_df[(province_df['Month and Year'] >= ytd_start) & (province_df['Month and Year'] <= latest_month)]['Number of Cars'].sum()
+        province_one_year = province_df[(province_df['Month and Year'] >= one_year_ago) & (province_df['Month and Year'] <= latest_month)]['Number of Cars'].sum()
+
+        province_row = {
+            'Priority': 1,
+            'Province': province,
+            'Last 6 Months': [int(sales) for sales in province_sales_last_6],
+            'Total Last 6 Months': int(total_province_last_6),
+            'YTD': int(province_ytd),
+            '1 Year': int(province_one_year)
+        }
+
+        table_data.append(province_row)
+
+    return jsonify({
+        'graph_html': graph_html,
+        'table_data': table_data,
+        'last_6_months_labels': last_6_months_labels,
+        'total_last_6_months_range': f"{last_6_months.iloc[-1].strftime('%b %Y')} - {last_6_months.iloc[0].strftime('%b %Y')}",
+        'ytd_range': f"{ytd_start.strftime('%b %Y')} - {latest_month.strftime('%b %Y')}",
+        'one_year_range': f"{(latest_month - pd.DateOffset(years=1)).strftime('%b %Y')} - {latest_month.strftime('%b %Y')}"
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)
