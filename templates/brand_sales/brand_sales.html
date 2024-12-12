@@ -31,6 +31,11 @@
     </div>
 </form>
 
+<!-- Line Chart for Sales by Brand -->
+<div id="sales-by-brand-chart" class="mb-5">
+    <!-- Plotly chart will be rendered here -->
+</div>
+
 <!-- Sales Table -->
 <table class="table table-bordered table-hover">
     <thead class="thead-dark">
@@ -131,5 +136,80 @@ $(document).ready(function(){
         });
     });
 });
+</script>
+<!-- Include Plotly.js -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Parse the JSON data passed from the backend
+        var salesData = {{ sales_by_brand_json | safe }};
+        var top5Brands = {{ top_5_brands | tojson }};
+        
+        // Prepare data for Plotly
+        var traceData = [];
+        var brands = Object.keys(salesData);
+        
+        brands.forEach(function(brand) {
+            var x = [];
+            var y = [];
+            for (var date in salesData[brand]) {
+                x.push(date);
+                y.push(salesData[brand][date]);
+            }
+            traceData.push({
+                x: x,
+                y: y,
+                mode: 'lines+markers',
+                name: brand,
+                visible: top5Brands.includes(brand) ? true : 'legendonly' // Show top 4 by default
+            });
+        });
+
+        var layout = {
+            title: 'Sales by Brand per Month',
+            xaxis: {
+                title: 'Month',
+                type: 'date',
+                rangeselector: {
+                    buttons: [
+                        {
+                            count: 1,
+                            label: '1y',
+                            step: 'year',
+                            stepmode: 'backward'
+                        },
+                        {
+                            count: 2,
+                            label: '2y',
+                            step: 'year',
+                            stepmode: 'backward'
+                        },
+                        {step: 'all'}
+                    ]
+                },
+                rangeslider: {visible: true},
+                range: [oneYearAgo, latestDate],
+                type: 'date'
+            },
+            yaxis: {
+                title: 'Number of Cars Sold'
+            },
+            legend: {
+                itemsizing: 'constant'
+            }
+        };
+
+        // Calculate the latest date in the sales data
+        var latestDate = new Date(Math.max.apply(null, brands.flatMap(function(brand) {
+            return Object.keys(salesData[brand]).map(function(date) { return new Date(date); });
+        })));
+        var oneYearAgo = new Date(latestDate);
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        
+        // Set the x-axis range to the past 1 year
+        layout.xaxis.range = [oneYearAgo, latestDate];
+
+        Plotly.newPlot('sales-by-brand-chart', traceData, layout, {responsive: true});
+    });
 </script>
 {% endblock %}

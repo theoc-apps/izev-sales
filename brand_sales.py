@@ -59,9 +59,9 @@ def brand_sales():
     brand_monthly_sales['Past Year Total'] = df_1y.groupby('Vehicle Make')['Number of Cars'].sum()
     brand_monthly_sales = brand_monthly_sales.fillna(0).reset_index()
 
-    # Sort by latest month's sales in ascending order
+    # Sort by latest month's sales in descending order
     latest_month_period = last_available_month.to_period('M')
-    brand_monthly_sales.sort_values(by=latest_month_period, ascending=True, inplace=True)
+    brand_monthly_sales.sort_values(by=latest_month_period, ascending=False, inplace=True)
 
     # Prepare model data
     model_monthly_sales = df_6m.groupby(['Vehicle Make', 'Vehicle Model', df_6m['Month and Year'].dt.to_period('M')])['Number of Cars'].sum().unstack(fill_value=0)
@@ -74,6 +74,10 @@ def brand_sales():
     model_monthly_sales['YTD Total'] = df_ytd.groupby(['Vehicle Make', 'Vehicle Model'])['Number of Cars'].sum()
     model_monthly_sales['Past Year Total'] = df_1y.groupby(['Vehicle Make', 'Vehicle Model'])['Number of Cars'].sum()
     model_monthly_sales = model_monthly_sales.fillna(0).reset_index()
+
+    # Sort by latest month's sales in descending order
+    latest_month_period = last_available_month.to_period('M')
+    model_monthly_sales.sort_values(by=latest_month_period, ascending=False, inplace=True)
 
     # Convert months to string format for display
     months_str = [month.strftime('%b %Y') for month in months_list]
@@ -94,6 +98,23 @@ def brand_sales():
     ytd_range = f"{start_date_ytd.strftime('%b %Y')} to {last_available_month.strftime('%b %Y')}"
     past_year_range = f"{(last_available_month - DateOffset(years=1) + DateOffset(days=1)).strftime('%b %Y')} to {last_available_month.strftime('%b %Y')}"
 
+    # **New Code Starts Here**
+    # Identify top 5 brands based on total sales in the past month
+    latest_month = df_filtered['Month and Year'].max()
+    sales_past_month = df_filtered[df_filtered['Month and Year'] == latest_month]
+    sales_by_brand_past_month = sales_past_month.groupby('Vehicle Make')['Number of Cars'].sum().sort_values(ascending=False)
+    top_5_brands = sales_by_brand_past_month.head(5).index.tolist()
+    # **New Code Ends Here**
+
+    # Aggregate monthly sales data per brand for the line chart
+    sales_by_brand = df_filtered.groupby(['Vehicle Make', 'Month and Year'])['Number of Cars'].sum().reset_index()
+    
+    # Pivot the data to have months as x-axis and brands as separate lines
+    sales_pivot = sales_by_brand.pivot(index='Month and Year', columns='Vehicle Make', values='Number of Cars').fillna(0)
+    
+    # Convert the pivot table to JSON for Plotly
+    sales_by_brand_json = sales_pivot.to_json(date_format='iso')
+
     return render_template('brand_sales/brand_sales.html',
                            brand_data=brand_data,
                            model_data=model_data,
@@ -105,4 +126,6 @@ def brand_sales():
                            selected_province=selected_province,
                            past_6_months_range=past_6_months_range,
                            ytd_range=ytd_range,
-                           past_year_range=past_year_range)
+                           past_year_range=past_year_range,
+                           sales_by_brand_json=sales_by_brand_json,
+                           top_5_brands=top_5_brands)  # **Added Parameter**
